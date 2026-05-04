@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Barang — Toko Kita</title>
+    <link rel="manifest" href="/tokotest/app-toko/manifest.json">
+    <meta name="theme-color" content="#085041">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Toko Kita">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%,60%  { transform: translateX(-6px); }
+            40%,80%  { transform: translateX(6px); }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        body { font-family: system-ui, sans-serif; }
+        .card { animation: fadeInUp .45s ease both; }
+        .shake { animation: shake .35s ease; }
+        .spin  { animation: spin 1s linear infinite; }
+
+        input:focus {
+            outline: none;
+            border-color: #1D9E75;
+            box-shadow: 0 0 0 3px rgba(29,158,117,.18);
+        }
+        .btn-primary {
+            background: #085041;
+            transition: background .15s, transform .1s;
+        }
+        .btn-primary:hover  { background: #0d6b56; }
+        .btn-primary:active { transform: scale(.97); }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+
+    <div class="card w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+
+        <!-- Top bar -->
+        <div class="px-6 py-4 flex items-center gap-3 border-b border-gray-100" style="background:#085041;">
+            <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+            </div>
+            <div>
+                <div class="text-white font-medium text-sm">Tambah Barang</div>
+                <div class="text-white/60 text-xs">Toko Kita</div>
+            </div>
+            <a href="index.html"
+               class="ml-auto text-white/70 hover:text-white text-xs flex items-center gap-1 transition-colors">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Kembali
+            </a>
+        </div>
+
+        <!-- Form -->
+        <div class="p-6 space-y-4">
+
+            <!-- Nama Barang -->
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Nama Barang</label>
+                <input id="nama_barang" type="text" placeholder="Contoh: Beras Premium 5kg"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800
+                           placeholder-gray-300 transition-all">
+            </div>
+
+            <!-- Harga -->
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Harga (Rp)</label>
+                <input id="harga" type="number" placeholder="Contoh: 75000" min="0"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800
+                           placeholder-gray-300 transition-all">
+            </div>
+
+            <!-- Pesan status -->
+            <div id="pesan" class="hidden text-sm rounded-lg px-3 py-2.5"></div>
+
+            <!-- Tombol -->
+            <button id="btn-simpan" onclick="simpanBarang()"
+                class="btn-primary w-full text-white text-sm font-medium rounded-lg px-4 py-2.5
+                       flex items-center justify-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Simpan Barang
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+        // Registrasi Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/tokotest/app-toko/sw.js')
+                    .then(r => console.log('[App] SW terdaftar:', r.scope))
+                    .catch(e => console.error('[App] SW gagal:', e));
+            });
+        }
+
+        function tampilPesan(teks, sukses) {
+            const el = document.getElementById('pesan');
+            el.textContent = teks;
+            el.className = sukses
+                ? 'text-sm rounded-lg px-3 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'text-sm rounded-lg px-3 py-2.5 bg-red-50 text-red-600 border border-red-200';
+            el.classList.remove('hidden');
+        }
+
+        async function simpanBarang() {
+            const nama  = document.getElementById('nama_barang').value.trim();
+            const harga = document.getElementById('harga').value.trim();
+            const btn   = document.getElementById('btn-simpan');
+
+            // Validasi
+            if (!nama || !harga) {
+                ['nama_barang','harga'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el.value.trim()) {
+                        el.classList.add('shake');
+                        el.style.borderColor = '#f87171';
+                        setTimeout(() => {
+                            el.classList.remove('shake');
+                            el.style.borderColor = '';
+                        }, 400);
+                    }
+                });
+                tampilPesan('Isi semua kolom terlebih dahulu.', false);
+                return;
+            }
+
+            // Loading
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+                Menyimpan...
+            `;
+
+            try {
+                const res = await fetch('http://localhost/tokotest/api-toko/tambah_barang.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nama_barang: nama, harga: Number(harga) })
+                });
+                const hasil = await res.json();
+
+                if (hasil.status === 'sukses') {
+                    tampilPesan('✓ ' + hasil.pesan, true);
+                    document.getElementById('nama_barang').value = '';
+                    document.getElementById('harga').value = '';
+                } else {
+                    tampilPesan('✗ ' + hasil.pesan, false);
+                }
+            } catch (e) {
+                tampilPesan('✗ Gagal terhubung ke server.', false);
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Simpan Barang
+            `;
+        }
+
+        // Enter key support
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter') simpanBarang();
+        });
+    </script>
+</body>
+</html>

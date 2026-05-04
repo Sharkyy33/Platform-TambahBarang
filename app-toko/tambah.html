@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Barang — Toko Kita</title>
+    <link rel="manifest" href="/tokotest/app-toko/manifest.json">
+    <meta name="theme-color" content="#085041">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Toko Kita">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+        :root {
+            --green-dark:  #085041;
+            --green-mid:   #1D9E75;
+            --green-light: #5DCAA5;
+            --green-pale:  #E1F5EE;
+            --accent:      #F5A623;
+            --red:         #C0392B;
+            --red-pale:    #FDF0EEE;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: #f8faf9;
+            min-height: 100vh;
+        }
+
+        @keyframes fadeUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+        @keyframes shake    { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-5px);} 40%,80%{transform:translateX(5px);} }
+        @keyframes spin     { to { transform:rotate(360deg); } }
+        @keyframes slideDown{ from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+        @keyframes popIn    { 0%{transform:scale(.6);opacity:0;} 80%{transform:scale(1.08);} 100%{transform:scale(1);opacity:1;} }
+        @keyframes progress { from{width:0} to{width:100%} }
+        @keyframes pulse    { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+        @keyframes rowAnim  { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+
+        .anim-fadeup  { animation: fadeUp .45s ease both; }
+        .anim-fadein  { animation: fadeIn .3s ease both; }
+        .shake        { animation: shake .35s ease; }
+        .spin         { animation: spin 1s linear infinite; }
+        .pop          { animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both; }
+        .badge-pulse  { animation: pulse 2s infinite; }
+        .row-anim     { animation: rowAnim .3s ease both; }
+
+        .field {
+            width: 100%;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #111;
+            background: #fff;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .field:focus {
+            outline: none;
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 3px rgba(29,158,117,.16);
+        }
+        .field.error {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(192,57,43,.12);
+        }
+        .field::placeholder { color: #c4c4c4; }
+
+        .input-wrap { position: relative; }
+        .input-prefix {
+            position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+            font-size: 13px; color: #9ca3af; font-weight: 500; pointer-events: none;
+        }
+        .field-harga { padding-left: 36px; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px; border: none; border-radius: 10px;
+            font-family: inherit; font-weight: 600; font-size: 14px;
+            cursor: pointer; transition: all .15s;
+        }
+        .btn-primary {
+            background: var(--green-dark); color: #fff;
+            padding: 12px 20px; width: 100%;
+        }
+        .btn-primary:hover  { background: #0a6554; }
+        .btn-primary:active { transform: scale(.97); }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+
+        .btn-secondary {
+            background: var(--green-pale); color: var(--green-dark);
+            padding: 10px 16px; font-size: 13px;
+        }
+        .btn-secondary:hover { background: #cdf0e3; }
+
+        .card {
+            background: #fff;
+            border: 1.5px solid #eef0ed;
+            border-radius: 16px;
+        }
+
+        .riwayat-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 16px;
+            border-top: 1px solid #f3f4f3;
+            animation: slideDown .3s ease both;
+        }
+        .riwayat-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--green-mid); flex-shrink: 0;
+        }
+
+        #toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--green-dark); color: #fff;
+            padding: 12px 22px; border-radius: 100px;
+            font-size: 13px; font-weight: 500;
+            box-shadow: 0 8px 24px rgba(8,80,65,.3);
+            z-index: 999; white-space: nowrap;
+            transition: opacity .3s, transform .3s;
+        }
+        #toast.hide {
+            opacity: 0; transform: translateX(-50%) translateY(10px);
+            pointer-events: none;
+        }
+        #toast.error { background: var(--red); }
+
+        .progress-bar {
+            height: 3px; background: var(--green-mid);
+            border-radius: 2px;
+            animation: progress 1.2s ease forwards;
+        }
+
+        .stat-mini {
+            background: var(--green-pale);
+            border-radius: 10px; padding: 10px 14px;
+        }
+
+        #sukses-overlay {
+            position: fixed; inset: 0; background: rgba(8,80,65,.45);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99; backdrop-filter: blur(4px);
+            animation: fadeIn .25s ease;
+        }
+        #sukses-overlay.hide { display: none; }
+        .sukses-card {
+            background: #fff; border-radius: 20px; padding: 36px 32px;
+            text-align: center; max-width: 280px; width: 90%;
+            animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+        }
+        .sukses-icon {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: var(--green-pale);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        /* ── Tabel Database ── */
+        .db-row {
+            display: grid;
+            grid-template-columns: 52px 1fr 120px;
+            gap: 8px;
+            padding: 10px 16px;
+            border-top: 1px solid #f0f0f0;
+            align-items: center;
+        }
+        .db-row:hover { background: #fafcfb; }
+        .id-badge {
+            font-size: 11px; background: var(--green-pale); color: var(--green-dark);
+            font-weight: 600; border-radius: 6px; padding: 2px 7px;
+            text-align: center; width: fit-content;
+        }
+        .db-loading {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 28px 16px;
+            color: #9ca3af; font-size: 13px;
+        }
+        .db-error {
+            display: none; text-align: center; padding: 24px 16px;
+            color: var(--red); font-size: 13px;
+        }
+        .db-search {
+            width: 100%; border: 1.5px solid #e5e7eb; border-radius: 8px;
+            padding: 8px 12px 8px 34px; font-size: 13px;
+            font-family: inherit; color: #111; background: #fff;
+            transition: border-color .2s;
+        }
+        .db-search:focus { outline: none; border-color: var(--green-mid); }
+        .db-search::placeholder { color: #c4c4c4; }
+        .search-wrap { position: relative; }
+        .search-icon {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div style="background:var(--green-dark);">
+    <div class="max-w-xl mx-auto px-5 py-4 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+        </div>
+        <div>
+            <div class="text-white font-semibold text-sm">Toko Kita</div>
+            <div class="text-white/55 text-xs">Tambah Barang Baru</div>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+            <span class="badge-pulse text-xs font-medium px-2.5 py-1 rounded-full"
+                  style="background:rgba(255,255,255,.15);color:#fff;">● Live</span>
+            <a href="index.html"
+               class="text-white/70 hover:text-white text-xs flex items-center gap-1 transition-colors ml-1">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Daftar
+            </a>
+        </div>
+    </div>
+    <div id="progress-wrap" class="hidden px-0">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="max-w-xl mx-auto px-5 py-6 space-y-5">
+
+    <!-- Form Card -->
+    <div class="card anim-fadeup" style="animation-delay:.05s;">
+        <div class="px-5 py-4 border-b" style="border-color:#f0f4f2;">
+            <div class="text-sm font-semibold text-gray-700">Informasi Barang</div>
+            <div class="text-xs text-gray-400 mt-0.5">Isi nama dan harga barang yang ingin ditambahkan</div>
+        </div>
+        <div class="p-5 space-y-4">
+
+            <!-- Nama -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1.5" for="nama_barang">
+                    Nama Barang <span style="color:var(--red)">*</span>
+                </label>
+                <input id="nama_barang" class="field" type="text"
+                    placeholder="Contoh: Beras Premium 5kg" autocomplete="off" autocapitalize="words">
+                <div id="err-nama" class="hidden text-xs mt-1" style="color:var(--red);">
+                    Nama barang tidak boleh kosong.
+                </div>
+            </div>
+
+            <!-- Harga -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1.5" for="harga">
+                    Harga <span style="color:var(--red)">*</span>
+                </label>
+                <div class="input-wrap">
+                    <span class="input-prefix">Rp</span>
+                    <input id="harga" class="field field-harga" type="number" min="0" step="500"
+                        placeholder="75000">
+                </div>
+                <div id="err-harga" class="hidden text-xs mt-1" style="color:var(--red);">
+                    Harga harus diisi (angka positif).
+                </div>
+            </div>
+
+            <!-- Preview harga -->
+            <div id="preview-harga" class="hidden stat-mini">
+                <div class="text-xs text-gray-400">Preview harga</div>
+                <div class="text-base font-semibold" style="color:var(--green-dark);" id="preview-nilai">—</div>
+            </div>
+
+            <!-- Tombol simpan -->
+            <button id="btn-simpan" class="btn btn-primary" onclick="simpanBarang()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Simpan Barang
+            </button>
+        </div>
+    </div>
+
+    <!-- Riwayat Card -->
+    <div class="card anim-fadeup" style="animation-delay:.15s;" id="riwayat-card">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#f0f4f2;">
+            <div>
+                <div class="text-sm font-semibold text-gray-700">Riwayat Sesi Ini</div>
+                <div class="text-xs text-gray-400 mt-0.5">Barang yang baru ditambahkan</div>
+            </div>
+            <span id="badge-count"
+                class="text-xs font-semibold px-2 py-0.5 rounded-full hidden"
+                style="background:var(--green-pale);color:var(--green-dark);">0</span>
+        </div>
+
+        <div id="empty-riwayat" class="flex flex-col items-center justify-center py-10 text-center">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round" class="mb-3">
+                <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <div class="text-sm text-gray-400">Belum ada barang ditambahkan</div>
+            <div class="text-xs text-gray-300 mt-1">Barang yang tersimpan akan muncul di sini</div>
+        </div>
+
+        <div id="list-riwayat"></div>
+
+        <div id="stat-sesi" class="hidden grid grid-cols-2 gap-3 p-4 border-t" style="border-color:#f0f4f2;">
+            <div class="stat-mini">
+                <div class="text-xs text-gray-400">Ditambahkan</div>
+                <div class="text-base font-semibold" style="color:var(--green-dark);" id="stat-count">0 item</div>
+            </div>
+            <div class="stat-mini">
+                <div class="text-xs text-gray-400">Total nilai</div>
+                <div class="text-base font-semibold" style="color:var(--green-dark);" id="stat-total-val">Rp 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SECTION BARU: Data Barang dari Database     -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="card anim-fadeup" style="animation-delay:.25s;" id="db-card">
+
+        <!-- Header -->
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#f0f4f2;">
+            <div>
+                <div class="text-sm font-semibold text-gray-700">Semua Barang di Database</div>
+                <div class="text-xs text-gray-400 mt-0.5">Data terkini dari server</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="db-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full hidden"
+                      style="background:var(--green-pale);color:var(--green-dark);"></span>
+                <button onclick="muatDataDB()" title="Refresh"
+                    class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    style="background:var(--green-pale);" id="btn-refresh">
+                    <svg id="icon-refresh" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stat row -->
+        <div id="db-stats" class="hidden grid grid-cols-3 gap-3 px-5 py-3 border-b" style="border-color:#f0f4f2;">
+            <div class="stat-mini">
+                <div class="text-xs text-gray-400">Total Item</div>
+                <div class="text-sm font-semibold" style="color:var(--green-dark);" id="db-stat-total">—</div>
+            </div>
+            <div class="stat-mini">
+                <div class="text-xs text-gray-400">Termurah</div>
+                <div class="text-sm font-semibold" style="color:var(--green-dark);" id="db-stat-min">—</div>
+            </div>
+            <div class="stat-mini">
+                <div class="text-xs text-gray-400">Termahal</div>
+                <div class="text-sm font-semibold" style="color:var(--green-dark);" id="db-stat-max">—</div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="px-5 py-3 border-b" style="border-color:#f0f4f2;" id="db-search-wrap" style="display:none;">
+            <div class="search-wrap">
+                <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input id="db-search" class="db-search" type="text"
+                    placeholder="Cari nama barang..." oninput="filterDB(this.value)">
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="db-loading" id="db-loading">
+            <svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="var(--green-mid)" stroke-width="2.5">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+            <span>Memuat data dari database...</span>
+        </div>
+
+        <!-- Error -->
+        <div class="db-error" id="db-error">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--red)"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div>Gagal memuat data.</div>
+            <button onclick="muatDataDB()" class="mt-2 text-xs underline" style="color:var(--red);">Coba lagi</button>
+        </div>
+
+        <!-- Tabel -->
+        <div id="db-list"></div>
+
+        <!-- Empty search result -->
+        <div id="db-empty-search" class="hidden text-center py-8 text-sm text-gray-400">
+            Tidak ada barang yang cocok.
+        </div>
+
+    </div>
+    <!-- ═══ END SECTION BARU ═══ -->
+
+    <!-- Tips -->
+    <div class="anim-fadeup text-xs text-gray-400 flex items-start gap-2 px-1" style="animation-delay:.35s;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Tekan <kbd class="bg-gray-100 border border-gray-200 rounded px-1 py-0.5 text-gray-500">Enter</kbd>
+        untuk simpan dengan cepat. Data dikirim ke
+        <code class="bg-gray-100 px-1 rounded" style="color:#555;">tambahbarang.php</code>
+    </div>
+
+</div>
+
+<!-- SUKSES OVERLAY -->
+<div id="sukses-overlay" class="hide">
+    <div class="sukses-card">
+        <div class="sukses-icon pop">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1D9E75"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        </div>
+        <div class="text-base font-bold text-gray-800 mb-1">Berhasil Disimpan!</div>
+        <div class="text-xs text-gray-400 mb-4" id="overlay-detail">—</div>
+        <button class="btn btn-secondary w-full justify-center" onclick="tutupOverlay()">
+            Tambah Lagi
+        </button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="hide"></div>
+
+<script>
+    // ── Service Worker ──
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/tokotest/app-toko/sw.js')
+                .then(r => console.log('[App] SW terdaftar:', r.scope))
+                .catch(e => console.error('[App] SW gagal:', e));
+        });
+    }
+
+    // ── State ──
+    let riwayat    = [];
+    let totalNilai = 0;
+    let semuaBarang = []; // ← menyimpan data DB untuk filter
+
+    // ── Format Harga ──
+    function formatHarga(n) {
+        return 'Rp ' + Number(n).toLocaleString('id-ID');
+    }
+
+    // ── Preview harga real-time ──
+    document.getElementById('harga').addEventListener('input', function () {
+        const val  = Number(this.value);
+        const wrap = document.getElementById('preview-harga');
+        const el   = document.getElementById('preview-nilai');
+        if (val > 0) {
+            el.textContent = formatHarga(val);
+            wrap.classList.remove('hidden');
+        } else {
+            wrap.classList.add('hidden');
+        }
+    });
+
+    // ── Toast ──
+    let toastTimer;
+    function showToast(teks, error = false) {
+        const t = document.getElementById('toast');
+        t.textContent = teks;
+        t.className = error ? 'error' : '';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.add('hide'), 2800);
+    }
+
+    // ── Progress bar ──
+    function mulaiProgress() {
+        const wrap = document.getElementById('progress-wrap');
+        const bar  = document.getElementById('progress-bar');
+        wrap.classList.remove('hidden');
+        bar.style.animation = 'none';
+        bar.offsetHeight;
+        bar.style.animation = 'progress 1.2s ease forwards';
+    }
+    function selesaiProgress() {
+        setTimeout(() => document.getElementById('progress-wrap').classList.add('hidden'), 400);
+    }
+
+    // ── Update riwayat UI ──
+    function updateRiwayat(nama, harga) {
+        riwayat.unshift({ nama, harga });
+        totalNilai += Number(harga);
+
+        document.getElementById('empty-riwayat').style.display = 'none';
+
+        const stat = document.getElementById('stat-sesi');
+        stat.classList.remove('hidden');
+        stat.style.display = 'grid';
+
+        const badge = document.getElementById('badge-count');
+        badge.textContent = riwayat.length;
+        badge.classList.remove('hidden');
+
+        document.getElementById('stat-count').textContent  = riwayat.length + ' item';
+        document.getElementById('stat-total-val').textContent = formatHarga(totalNilai);
+
+        const row = document.createElement('div');
+        row.className = 'riwayat-row';
+        row.innerHTML = `
+            <div class="riwayat-dot"></div>
+            <div style="flex:1;font-size:13px;color:#1a1a1a;">${escHTML(nama)}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--green-dark);">${formatHarga(harga)}</div>
+            <div style="font-size:10px;color:#9ca3af;">${jamSekarang()}</div>
+        `;
+        document.getElementById('list-riwayat').prepend(row);
+    }
+
+    function escHTML(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function jamSekarang() {
+        return new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    // ── Overlay ──
+    function tutupOverlay() {
+        document.getElementById('sukses-overlay').classList.add('hide');
+        document.getElementById('nama_barang').focus();
+    }
+
+    // ── Validasi ──
+    function setError(id, errId, show) {
+        const input = document.getElementById(id);
+        const err   = document.getElementById(errId);
+        if (show) {
+            input.classList.add('error', 'shake');
+            err.classList.remove('hidden');
+            setTimeout(() => input.classList.remove('shake'), 400);
+        } else {
+            input.classList.remove('error');
+            err.classList.add('hidden');
+        }
+    }
+
+    // ── API URLs ──
+    const API_TAMBAH = '../api-toko/tambahbarang.php';
+    const API_GET    = '../api-toko/get_barang.php';
+
+    // ══════════════════════════════════════════
+    // FUNGSI BARU: Muat Data dari Database
+    // ══════════════════════════════════════════
+    async function muatDataDB() {
+        const loadEl   = document.getElementById('db-loading');
+        const errorEl  = document.getElementById('db-error');
+        const listEl   = document.getElementById('db-list');
+        const statsEl  = document.getElementById('db-stats');
+        const badgeEl  = document.getElementById('db-badge');
+        const searchEl = document.getElementById('db-search-wrap');
+        const iconRef  = document.getElementById('icon-refresh');
+
+        // Reset tampilan
+        loadEl.style.display  = 'flex';
+        errorEl.style.display = 'none';
+        listEl.innerHTML      = '';
+        statsEl.classList.add('hidden');
+        badgeEl.classList.add('hidden');
+        searchEl.style.display = 'none';
+        iconRef.classList.add('spin');
+
+        try {
+            const res   = await fetch(API_GET);
+            const hasil = await res.json();
+
+            if (hasil.status === 'success' && Array.isArray(hasil.data)) {
+                semuaBarang = hasil.data;
+                renderBarangDB(semuaBarang);
+
+                // Stats
+                if (semuaBarang.length > 0) {
+                    const hargaList = semuaBarang.map(b => Number(b.harga));
+                    document.getElementById('db-stat-total').textContent = semuaBarang.length + ' item';
+                    document.getElementById('db-stat-min').textContent   = formatHarga(Math.min(...hargaList));
+                    document.getElementById('db-stat-max').textContent   = formatHarga(Math.max(...hargaList));
+                    statsEl.classList.remove('hidden');
+                    statsEl.style.display = 'grid';
+                    badgeEl.textContent   = semuaBarang.length;
+                    badgeEl.classList.remove('hidden');
+                    searchEl.style.display = 'block';
+                }
+            } else {
+                throw new Error('Format response tidak valid');
+            }
+        } catch (e) {
+            console.error('[DB Error]', e);
+            errorEl.style.display = 'block';
+        }
+
+        loadEl.style.display = 'none';
+        iconRef.classList.remove('spin');
+    }
+
+    function renderBarangDB(data) {
+        const listEl      = document.getElementById('db-list');
+        const emptySearch = document.getElementById('db-empty-search');
+
+        if (data.length === 0) {
+            listEl.innerHTML = '';
+            emptySearch.classList.remove('hidden');
+            return;
+        }
+
+        emptySearch.classList.add('hidden');
+
+        // Header kolom
+        listEl.innerHTML = `
+            <div style="display:grid;grid-template-columns:52px 1fr 120px;gap:8px;
+                padding:7px 16px;background:#f8faf9;">
+                <div style="font-size:10px;font-weight:600;color:#9ca3af;letter-spacing:.5px;">ID</div>
+                <div style="font-size:10px;font-weight:600;color:#9ca3af;letter-spacing:.5px;">NAMA BARANG</div>
+                <div style="font-size:10px;font-weight:600;color:#9ca3af;letter-spacing:.5px;text-align:right;">HARGA</div>
+            </div>
+        `;
+
+        data.forEach((barang, i) => {
+            const row = document.createElement('div');
+            row.className = 'db-row row-anim';
+            row.style.animationDelay = (i * 0.04) + 's';
+            row.innerHTML = `
+                <div class="id-badge">${escHTML(String(barang.id))}</div>
+                <div style="font-size:13px;color:#1a1a1a;">${escHTML(barang.nama_barang)}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--green-dark);text-align:right;">
+                    ${formatHarga(barang.harga)}
+                </div>
+            `;
+            listEl.appendChild(row);
+        });
+    }
+
+    // Filter / search
+    function filterDB(keyword) {
+        const q      = keyword.toLowerCase().trim();
+        const filtered = q
+            ? semuaBarang.filter(b => b.nama_barang.toLowerCase().includes(q))
+            : semuaBarang;
+        renderBarangDB(filtered);
+    }
+
+    // ── SIMPAN ──
+    async function simpanBarang() {
+        const namaEl  = document.getElementById('nama_barang');
+        const hargaEl = document.getElementById('harga');
+        const nama    = namaEl.value.trim();
+        const harga   = hargaEl.value.trim();
+        const btn     = document.getElementById('btn-simpan');
+
+        let valid = true;
+        if (!nama)                        { setError('nama_barang','err-nama',  true);  valid = false; }
+        else                              { setError('nama_barang','err-nama',  false); }
+        if (!harga || Number(harga) <= 0) { setError('harga',      'err-harga', true);  valid = false; }
+        else                              { setError('harga',      'err-harga', false); }
+        if (!valid) return;
+
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg class="spin" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+            Menyimpan...
+        `;
+        mulaiProgress();
+
+        try {
+            const res = await fetch(API_TAMBAH, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nama_barang: nama, harga: Number(harga) })
+            });
+
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            const hasil = await res.json();
+
+            if (hasil.status === 'sukses') {
+                updateRiwayat(nama, harga);
+                document.getElementById('overlay-detail').textContent = `${nama} — ${formatHarga(harga)}`;
+                document.getElementById('sukses-overlay').classList.remove('hide');
+                namaEl.value  = '';
+                hargaEl.value = '';
+                document.getElementById('preview-harga').classList.add('hidden');
+                showToast('✓ ' + hasil.pesan);
+
+                // ← Otomatis refresh tabel database setelah simpan berhasil
+                muatDataDB();
+            } else {
+                showToast('✗ ' + (hasil.pesan || 'Terjadi kesalahan.'), true);
+            }
+        } catch (e) {
+            console.error('[Fetch Error]', e);
+            showToast('✗ Gagal terhubung ke server.', true);
+        }
+
+        selesaiProgress();
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Simpan Barang
+        `;
+    }
+
+    // ── Enter key ──
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !document.getElementById('sukses-overlay').classList.contains('hide')) {
+            tutupOverlay();
+        } else if (e.key === 'Enter') {
+            simpanBarang();
+        }
+    });
+
+    // ── Init ──
+    window.addEventListener('load', () => {
+        document.getElementById('nama_barang').focus();
+        muatDataDB(); // ← load data database saat halaman dibuka
+    });
+</script>
+</body>
+</html>

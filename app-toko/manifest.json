@@ -1,0 +1,25 @@
+{
+  "name": "Toko Kita",
+  "short_name": "TokoKita",
+  "description": "Aplikasi daftar barang toko berbasis PWA",
+  "start_url": "/tokotest/app-toko/index.html",
+  "scope": "/tokotest/app-toko/",
+  "display": "standalone",
+  "background_color": "#085041",
+  "theme_color": "#085041",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/tokotest/app-toko/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/tokotest/app-toko/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

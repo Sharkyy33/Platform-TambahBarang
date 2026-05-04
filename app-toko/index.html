@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toko Kita</title>
+
+    <link rel="manifest" href="/tokotest/app-toko/manifest.json">
+    <meta name="theme-color" content="#085041">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Toko Kita">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .row-anim { animation: fadeInUp 0.4s ease both; }
+        .badge-pulse { animation: pulse 2s infinite; }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="p-8 bg-gray-50">
+
+    <div class="max-w-2xl mx-auto">
+
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background:#1D9E75;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+            </div>
+            <div>
+                <div class="text-lg font-medium text-gray-800">Toko Kita</div>
+                <div class="text-sm text-gray-400">Daftar barang tersedia</div>
+            </div>
+            <div class="ml-auto flex items-center gap-2">
+                <span class="badge-pulse text-xs font-medium px-3 py-1 rounded-full border"
+                    style="background:#E1F5EE; color:#0F6E56; border-color:#5DCAA5;">
+                    ● Live
+                </span>
+                <a href="tambah.html"
+                   class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all"
+                   style="background:#085041; color:#fff;"
+                   onmouseover="this.style.background='#0d6b56'"
+                   onmouseout="this.style.background='#085041'">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Tambah
+                </a>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-gray-100 rounded-lg p-4">
+                <div class="text-xs text-gray-400 mb-1">Total Barang</div>
+                <div class="text-xl font-medium text-gray-800" id="stat-total">—</div>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-4">
+                <div class="text-xs text-gray-400 mb-1">Harga terendah</div>
+                <div class="text-xl font-medium" id="stat-min" style="color:#0F6E56;">—</div>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-4">
+                <div class="text-xs text-gray-400 mb-1">Harga tertinggi</div>
+                <div class="text-xl font-medium" id="stat-max" style="color:#993C1D;">—</div>
+            </div>
+        </div>
+
+        <!-- Tabel -->
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+
+            <!-- Header Tabel -->
+            <div class="grid text-sm font-medium text-white px-4 py-3 gap-2"
+                style="grid-template-columns: 60px 1fr 130px; background:#085041;">
+                <div>ID</div>
+                <div>Nama Barang</div>
+                <div class="text-right">Harga</div>
+            </div>
+
+            <!-- Isi Tabel (diisi oleh JS) -->
+            <div id="tabel-barang"></div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="flex items-center justify-center gap-3 p-8 text-gray-400 text-sm">
+                <svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+                Mengambil data dari server...
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="hidden p-8 text-center text-sm" style="color:#993C1D;">
+                <div class="text-2xl mb-2">&#x26A0;</div>
+                Gagal mengambil data. Cek koneksi ke server.
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between mt-3">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full" style="background:#1D9E75;"></div>
+                <!-- ✅ FIX: URL info disesuaikan dengan path relatif yang dipakai -->
+                <div class="text-xs text-gray-400">
+                    Data dari <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-500">../api-toko/get_barang.php</code>
+                </div>
+            </div>
+            <a href="simple.html" class="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">
+                Form simpel →
+            </a>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
